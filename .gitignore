@@ -1,0 +1,119 @@
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.so
+*.egg
+*.egg-info/
+.eggs/
+MANIFEST
+*.whl
+
+# ================================
+# Virtual environments
+# ================================
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ================================
+# Packaging & build
+# ================================
+build/
+dist/
+
+# ================================
+# Testing & coverage
+# ================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# ================================
+# Type checking & linting
+# ================================
+.mypy_cache/
+.dmypy.json
+.ruff_cache/
+
+# ================================
+# Jupyter
+# ================================
+!notebooks/.gitkeep
+*.ipynb
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+# ================================
+# Data
+# ================================
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+*.csv
+*.parquet
+*.feather
+*.pkl
+*.h5
+*.hdf5
+*.zip
+*.tar.gz
+
+# ================================
+# Model artefacts
+# ================================
+# models/*
+# !models/.gitkeep
+# *.joblib
+# *.pickle
+
+# ================================
+# Results & outputs
+# ================================
+# results/figures/*
+# results/tables/*
+# !results/figures/.gitkeep
+# !results/tables/.gitkeep
+# *.png
+# *.pdf
+
+# ================================
+# Secrets & environment variables
+# ================================
+.env
+.env.*
+.env.local
+secrets.yaml
+config/local.yaml
+
+# ================================
+# OS files
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+*.swp
+*.swo
+
+# ================================
+# IDE
+# ================================
+.vscode/
+.idea/
+*.code-workspace
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
