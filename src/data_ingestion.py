@@ -61,7 +61,7 @@ def validate_data(
     Args:
         data (pd.DataFrame): df with daily adjusted closing prices
         max_nan_pct (float, optional): Maximum pct of null values accepted. Defaults to 0.1.
-        min_history (int, optional): Minimum number of trading days. Defaults to 251 (1 year).
+        min_history (int, optional): Minimum number of trading days. Defaults to 252 (1 year).
 
     Returns:
         bool:
@@ -115,7 +115,7 @@ def process_data(
     Args:
         data (pd.DataFrame): df with daily adjusted closing prices
         max_nan_pct (float, optional): Maximum pct of null values accepted. Defaults to 0.1.
-        min_history (int, optional): Minimum number of trading days. Defaults to 251 (1 year).
+        min_history (int, optional): Minimum number of trading days. Defaults to 252 (1 year).
 
     Returns:
         pd.DataFrame: clean df with daily adj. closing prices
@@ -144,6 +144,26 @@ def run_ingestion_pipeline(
     max_nan_pct: float = 0.1,
     min_history: int = 251,
 ) -> str:
+    """Orchestrator function of the entire data ingestion process.
+
+    Steps:
+        1. Fetch data
+        2. Save raw data
+        3. Validate and process data
+        4. Save processed data
+
+    Args:
+        tickers (list[str]): universe of tickers to fetch.
+        start_date (str): start data in 'YYYY-MM-DD' format.
+        end_date (str): end data in 'YYYY-MM-DD' format.
+        raw_data_path (str, optional): file path to save raw data. Defaults to RAW_DATA_PATH.
+        processed_data_path (str, optional): file path to save processed data. Defaults to PROCESSED_DATA_PATH.
+        max_nan_pct (float, optional): Maximum pct of null values accepted. Defaults to 0.1.
+        min_history (int, optional): Minimum number of trading days. Defaults to 252 (1 year)
+
+    Returns:
+        str: outcome of the ingestion pipeline
+    """
 
     logger.info(
         f"Ingestion pipeline started: {len(tickers)} Tickers, {start_date} to {end_date}"
@@ -162,14 +182,13 @@ def run_ingestion_pipeline(
         logger.error("No data fetched - aborting pipeline")
         return "Pipeline failed: no data fetched"
 
-    if not validate_data(df):
+    if not validate_data(df, max_nan_pct, min_history):
         logger.warning("Data Validation failed - Processing Data")
         df_clean = process_data(df)
 
-    # 4. Process Data
-    df_clean = process_data(df)
+    df_clean = process_data(df, max_nan_pct, min_history)
 
-    # 5. Save Processed Data
+    # 4. Save Processed Data
     file_name = "processed_ticker_prices"
     save_data(df, file_name, processed_data_path)
 
