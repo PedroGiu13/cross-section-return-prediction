@@ -15,7 +15,8 @@ Each stage of the pipeline corresponds to a GitHub issue:
 import logging
 
 from src.data_ingestion import run_ingestion_pipeline
-from utils.config import CONFIG
+from src.features import run_feature_pipeline
+from utils.config import CONFIG, PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,6 +25,7 @@ logging.basicConfig(
 )
 
 if __name__ == "__main__":
+    # 1. Fetch, Validate, and Process data
     ingestion_result = run_ingestion_pipeline(
         tickers=CONFIG["tickers"],
         start_date=CONFIG["start"],
@@ -31,3 +33,12 @@ if __name__ == "__main__":
         max_nan_pct=CONFIG["max_nan_pct"],
         min_history=CONFIG["min_history"],
     )
+
+    print(ingestion_result)
+
+    # 2. Compute Feature Matrix
+    feature_matrix_result = run_feature_pipeline(
+        PROCESSED_TICKER_PRICE, PROCESSED_DATA_PATH
+    )
+
+    print(feature_matrix_result)
