@@ -20,16 +20,18 @@ def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: df of log returns
     """
 
-    ratio = prices.shift(-22) / prices.shift(-1)
+    ratio = prices / prices.shift(1)
 
     log_returns = ratio.apply(np.log)
 
-    return log_returns
+    rolling_log_returns = log_returns.shift(-2).rolling(21).sum()
+
+    return rolling_log_returns
 
 
 def compute_mom(
     prices: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """compute momentum for:
         - 21 dyas (1 month) leaving 1 day buffer
         - 126 days (6 months) leaving 2 day buffer to avoid the reversal contamination of the most recent month
@@ -40,18 +42,21 @@ def compute_mom(
         prices (pd.DataFrame): daily adj closing prices df
 
     Returns:
-        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: momentum for 1, 6 and 12 months
+        tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: momentum for 1, 6, 8, and 12 months
     """
 
     ratio_mom_1 = prices.shift(1) / prices.shift(22)
-    ratio_mom_6 = prices.shift(22) / prices.shift(18)
-    ratio_mom_12 = prices.shift(21) / prices.shift(254)
+    ratio_mom_6 = prices.shift(2) / prices.shift(128)
+    ratio_mom_12 = prices.shift(2) / prices.shift(254)
 
     mom_1 = ratio_mom_1.apply(np.log)
     mom_6 = ratio_mom_6.apply(np.log)
     mom_12 = ratio_mom_12.apply(np.log)
 
-    return mom_1, mom_6, mom_12
+    ratio_mom_6_lag_8 = prices.shift(8) / prices.shift(134)
+    mom_6_lag_8 = ratio_mom_6_lag_8.apply(np.log)
+
+    return mom_1, mom_6, mom_6_lag_8, mom_12
 
 
 def compute_maxret(prices: pd.DataFrame) -> pd.DataFrame:
@@ -75,7 +80,7 @@ def compute_maxret(prices: pd.DataFrame) -> pd.DataFrame:
     return maxret
 
 
-def compute_chmom(mom_6: pd.DataFrame) -> pd.DataFrame:
+def compute_chmom(mom_6: pd.DataFrame, mom_6_lag_8: pd.DataFrame) -> pd.DataFrame:
     """Computes change of momentum in the 6-month momentum from lag 2 and from lag 8. Indicates if the momentum is accelerating or deceleratring
 
     Args:
@@ -85,7 +90,7 @@ def compute_chmom(mom_6: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: chmom
     """
 
-    return mom_6 - mom_6.shift(6)
+    return mom_6 - mom_6_lag_8
 
 
 def compute_retvol(prices: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -101,8 +106,8 @@ def compute_retvol(prices: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     ratio = prices / prices.shift(1)
     log_returns = ratio.apply(np.log)
 
-    retvol_20 = log_returns.rolling(21).std() * np.sqrt(252)
-    retvol_60 = log_returns.rolling(61).std() * np.sqrt(252)
+    retvol_20 = log_returns.rolling(20).std().shift(1) * np.sqrt(252)
+    retvol_60 = log_returns.rolling(60).std().shift(1) * np.sqrt(252)
 
     return retvol_20, retvol_60
 
@@ -133,9 +138,9 @@ def run_feature_pipeline(
 
     # 1. Compute Features:
     log_returns = compute_log_returns(prices)
-    mom_1, mom_6, mom_12 = compute_mom(prices)
+    mom_1, mom_6, mom_6_lag_8, mom_12 = compute_mom(prices)
     maxret = compute_maxret(prices)
-    chmom = compute_chmom(mom_6)
+    chmom = compute_chmom(mom_6, mom_6_lag_8)
     retvol_20, retvol_60 = compute_retvol(prices)
 
     # 2. Create feature matrix:
