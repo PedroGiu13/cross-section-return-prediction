@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from utils.config import PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
+from config.data_config import PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
 from utils.data_handler import load_data, save_data
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,6 @@ def transform_feature_matrix(feature_matrix: pd.DataFrame) -> pd.DataFrame:
 def run_feature_pipeline(
     file_name: str = PROCESSED_TICKER_PRICE, cache_dir: str = PROCESSED_DATA_PATH
 ) -> str:
-
     logger.info("Computing features")
     t0 = time.time()
 
