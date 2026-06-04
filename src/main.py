@@ -14,9 +14,9 @@ Each stage of the pipeline corresponds to a GitHub issue:
 
 import logging
 
+from config.data_config import CONFIG, PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
 from src.data_ingestion import run_ingestion_pipeline
 from src.features import run_feature_pipeline
-from utils.config import CONFIG, PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
 
 logging.basicConfig(
     level=logging.INFO,
