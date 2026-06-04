@@ -73,7 +73,7 @@ class Config(TypedDict):
     start: str
     end: str
     tickers: list[str]
-    min_history_months: int
+    min_history: int
     max_nan_pct: float
 
 
@@ -81,6 +81,6 @@ CONFIG: Config = {
     "start": "2000-01-01",
     "end": "2025-12-31",
     "tickers": TICKERS,
-    "min_history_months": 24,
+    "min_history": 504,
     "max_nan_pct": 0.1,
 }
