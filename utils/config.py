@@ -4,6 +4,9 @@ from typing import TypedDict
 RAW_DATA_PATH = "data/raw/"
 PROCESSED_DATA_PATH = "data/processed/"
 
+PROCESSED_TICKER_PRICE = "processed_ticker_prices"
+RAW_TICKER_PRICE = "raw_ticker_prices"
+
 TICKERS = [
     # Technology
     "AAPL",
