@@ -4,7 +4,7 @@ import time
 import pandas as pd
 import yfinance as yf
 
-from utils.config import (
+from config.data_config import (
     PROCESSED_DATA_PATH,
     PROCESSED_TICKER_PRICE,
     RAW_DATA_PATH,
