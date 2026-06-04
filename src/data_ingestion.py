@@ -4,8 +4,13 @@ import time
 import pandas as pd
 import yfinance as yf
 
-from utils.config import PROCESSED_DATA_PATH, RAW_DATA_PATH
-from utils.data_saver import save_data
+from utils.config import (
+    PROCESSED_DATA_PATH,
+    PROCESSED_TICKER_PRICE,
+    RAW_DATA_PATH,
+    RAW_TICKER_PRICE,
+)
+from utils.data_handler import save_data
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +145,9 @@ def run_ingestion_pipeline(
     start_date: str,
     end_date: str,
     raw_data_path: str = RAW_DATA_PATH,
+    raw_file_name: str = RAW_TICKER_PRICE,
     processed_data_path: str = PROCESSED_DATA_PATH,
+    processed_file_name: str = PROCESSED_TICKER_PRICE,
     max_nan_pct: float = 0.1,
     min_history: int = 251,
 ) -> str:
@@ -157,7 +164,9 @@ def run_ingestion_pipeline(
         start_date (str): start data in 'YYYY-MM-DD' format.
         end_date (str): end data in 'YYYY-MM-DD' format.
         raw_data_path (str, optional): file path to save raw data. Defaults to RAW_DATA_PATH.
+        raw_file_name (str, optional): file name for raw data. Defaults to RAW_TICKER_PRICE.
         processed_data_path (str, optional): file path to save processed data. Defaults to PROCESSED_DATA_PATH.
+        processed_file_name(str, optional): file name for processed data. Defaults to PROCESSED_TICKER_PRICE
         max_nan_pct (float, optional): Maximum pct of null values accepted. Defaults to 0.1.
         min_history (int, optional): Minimum number of trading days. Defaults to 252 (1 year)
 
@@ -174,8 +183,7 @@ def run_ingestion_pipeline(
     df = get_ticker_data(tickers, start_date, end_date)
 
     # 2. Save raw data
-    file_name = "raw_ticker_prices"
-    save_data(df, file_name, raw_data_path)
+    save_data(df, raw_file_name, raw_data_path)
 
     # 3. Validate and clean data
     if df.empty:
@@ -189,10 +197,9 @@ def run_ingestion_pipeline(
     df_clean = process_data(df, max_nan_pct, min_history)
 
     # 4. Save Processed Data
-    file_name = "processed_ticker_prices"
-    save_data(df, file_name, processed_data_path)
+    save_data(df, processed_file_name, processed_data_path)
 
     elapsed_t = time.time() - t0
-    msg = f"Pipline completed (time elapsed: {elapsed_t:.2f}) - Saved df: Rows - {df_clean.shape[0]}; Columns - {df.shape[1]}; Observations {df.size}"
+    msg = f"Pipline completed (time elapsed: {elapsed_t:.2f}) - Saved df: Rows - {df_clean.shape[0]}; Columns - {df_clean.shape[1]}; Observations {df_clean.size}"
     logger.info(msg)
     return msg
