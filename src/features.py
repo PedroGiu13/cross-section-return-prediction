@@ -44,7 +44,7 @@ def compute_mom(
     Returns:
         tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]: momentum for 1, 6, 8, and 12 months
     """
-
+    # Compute mom ratios
     ratio_mom_1 = prices.shift(1) / prices.shift(22)
     ratio_mom_6 = prices.shift(2) / prices.shift(128)
     ratio_mom_12 = prices.shift(2) / prices.shift(254)
@@ -53,6 +53,7 @@ def compute_mom(
     mom_6 = ratio_mom_6.apply(np.log)
     mom_12 = ratio_mom_12.apply(np.log)
 
+    # Additional momentum for change in momentum
     ratio_mom_6_lag_8 = prices.shift(8) / prices.shift(134)
     mom_6_lag_8 = ratio_mom_6_lag_8.apply(np.log)
 
