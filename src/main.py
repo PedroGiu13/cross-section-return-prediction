@@ -51,6 +51,8 @@ if __name__ == "__main__":
 
     print(feature_matrix_result)
 
-    model_results = run_model_building_pipeline(
+    x_test, y_test = run_model_building_pipeline(
         VAL_START_DATE, TEST_START_DATE, NUM_BOOST, EARLY_STOP, N_TRIALS
     )
+    print(x_test.head())
+    print(x_test.tail())

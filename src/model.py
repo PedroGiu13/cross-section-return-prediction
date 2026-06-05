@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from pathlib import Path
 
 import optuna
@@ -11,11 +12,13 @@ from config.data_config import PROCESSED_DATA_PATH
 from config.model_config import (
     FEAT_MATRIX_FILE_NAME,
     FEATURE_LIST,
+    FINE_TUNE,
     MODEL_DIR,
     XGB_BEST_PARMS_FILE_NAME,
+    XGB_LEARNING_CURVE_FILE_NAME,
     XGB_MODEL_FILE_NAME,
 )
-from utils.data_handler import load_data_csv
+from utils.data_handler import load_data_csv, save_data_csv
 from utils.model_handler import save_xgb_model
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -82,7 +85,7 @@ def train_model(
     params: dict,
     num_boost: int,
     early_stop: int,
-) -> tuple[xgb.Booster, dict]:
+) -> tuple[xgb.Booster, pd.DataFrame]:
     """Function that  train the XGBoost model with early stopping on validation RMSE
 
     Args:
@@ -90,9 +93,9 @@ def train_model(
         x_val (pd.DataFrame): validation features
         y_train (pd.Series): training target
         y_val (pd.Series): validation target
-        params (dict, optional): CGBoost hyperparameters. Defaults to XGBOOST_PARAMS.
-        num_boost (int, optional): maximum number of boosting rounds. Defaults to 1000.
-        early_stop (int, optional): stopping criterion. Defaults to 30.
+        params (dict, optional): CGBoost hyperparameters.
+        num_boost (int, optional): maximum number of boosting rounds.
+        early_stop (int, optional): stopping criterion.
 
     Returns:
         tuple[xgb.Booster, dict]: fitted booster and evaluatioon results
@@ -111,15 +114,23 @@ def train_model(
         evals=[(d_train, "train"), (d_val, "val")],
         num_boost_round=num_boost,
         early_stopping_rounds=early_stop,
-        eval_result=eval_results,
-        verbose=False,
+        evals_result=eval_results,
+        verbose_eval=False,
     )
 
     logger.info(
         f"Training Complete - best iterations: {model.best_iteration}; best val RMSE: {model.best_score:.4f}"
     )
 
-    return model, eval_results
+    eval_df = pd.DataFrame(
+        {
+            "round": range(len(eval_results["train"]["rmse"])),
+            "train_rmse": eval_results["train"]["rmse"],
+            "val_rmse": eval_results["val"]["rmse"],
+        }
+    )
+
+    return model, eval_df
 
 
 def hyperparameter_objective(
@@ -131,6 +142,20 @@ def hyperparameter_objective(
     num_boost: int,
     early_stop: int,
 ) -> float:
+    """Function that defines the hyperparameter objectives before the tuning process
+
+    Args:
+        trial (optuna.Trial): process of evaluation
+        x_train (pd.DataFrame): training features
+        x_val (pd.DataFrame): validation features
+        y_train (pd.Series): training target
+        y_val (pd.Series): validation target
+        num_boost (int, optional): maximum number of boosting rounds.
+        early_stop (int, optional): stopping criterion.
+
+    Returns:
+        float: best RMSE
+    """
     params = {
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
@@ -138,6 +163,8 @@ def hyperparameter_objective(
         "eta": trial.suggest_float("eta", 0.01, 0.1, log=True),
         "subsample": trial.suggest_float("subsample", 0.7, 0.9),
         "max_depth": trial.suggest_int("max_depth", 3, 5),
+        "lambda": trial.suggest_float("lambda", 1.0, 3.0, log=True),
+        "alpha": trial.suggest_float("alpha", 0.1, 1.0, log=True),
     }
 
     _, eval_results = train_model(
@@ -157,6 +184,20 @@ def hyperparameter_tuning(
     early_stop: int,
     n_trials: int,
 ) -> dict:
+    """Function to perform the parameter tuning
+
+    Args:
+        x_train (pd.DataFrame): training features
+        x_val (pd.DataFrame): validation features
+        y_train (pd.Series): training target
+        y_val (pd.Series): validation target
+        num_boost (int, optional): maximum number of boosting rounds.
+        early_stop (int, optional): stopping criterion.
+        n_trials (int): number of trials
+
+    Returns:
+        dict: optimal parameters
+    """
     sampler = TPESampler(seed=40)
 
     study = optuna.create_study(
@@ -174,17 +215,8 @@ def hyperparameter_tuning(
     best_params = {
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
-        "lambda": 1.0,
-        "alpha": 0.1,
         **study.best_params,
     }
-
-    logger.info(
-        "Tuning complete\n"
-        f"- Best trial: {study.best_trial.number},\n"
-        f"Best Val RMSE: {study.best_value:.4f},\n"
-        f"Best Params: {study.best_params}"
-    )
 
     return best_params
 
@@ -199,11 +231,31 @@ def load_or_tune_params(
     n_trials: int,
     params_file_name: str,
     model_dir: str,
-    retune: bool = False,
+    retune: bool = FINE_TUNE,
 ) -> dict:
+    """Function that checks if the model has been tuned or not. If the  optimal parameters are saved they are loaded. If not the tuner is executed
+
+    Args:
+        x_train (pd.DataFrame): training features
+        x_val (pd.DataFrame): validation features
+        y_train (pd.Series): training target
+        y_val (pd.Series): validation target
+        num_boost (int, optional): maximum number of boosting rounds.
+        early_stop (int, optional): stopping criterion.
+        n_trials (int): number of trials
+        params_file_name (str): best params file name
+        model_dir (str): model results directory
+        retune (bool, optional): check to force retunning. Defaults to FINE_TUNE.
+
+    Returns:
+        dict: optimal parameters
+    """
     file_dir = Path(model_dir)
     file_dir.mkdir(parents=True, exist_ok=True)
-    file_path = file_dir / params_file_name
+
+    model_name = f"{params_file_name}.json"
+
+    file_path = file_dir / model_name
 
     if file_path.exists() and not retune:
         try:
@@ -239,18 +291,45 @@ def run_model_building_pipeline(
     cache_dir: str = PROCESSED_DATA_PATH,
     params_file_name: str = XGB_BEST_PARMS_FILE_NAME,
     model_file_name: str = XGB_MODEL_FILE_NAME,
+    learning_curve_file_name: str = XGB_LEARNING_CURVE_FILE_NAME,
     model_dir: str = MODEL_DIR,
-):
+) -> tuple[pd.DataFrame, pd.Series]:
+    """_summary_
+
+    Args:
+        val_start_date (str): _description_
+        test_start_date (str): _description_
+        num_boost (int): _description_
+        early_stop (int): _description_
+        n_trials (int): _description_
+        feat_list (list[str], optional): _description_. Defaults to FEATURE_LIST.
+        feat_file_name (str, optional): _description_. Defaults to FEAT_MATRIX_FILE_NAME.
+        cache_dir (str, optional): _description_. Defaults to PROCESSED_DATA_PATH.
+        params_file_name (str, optional): _description_. Defaults to XGB_BEST_PARMS_FILE_NAME.
+        model_file_name (str, optional): _description_. Defaults to XGB_MODEL_FILE_NAME.
+        learning_curve_file_name (str, optional): _description_. Defaults to XGB_LEARNING_CURVE_FILE_NAME.
+        model_dir (str, optional): _description_. Defaults to MODEL_DIR.
+
+    Returns:
+        tuple[pd.DataFrame, pd.Series]: _description_
+    """
+    logger.info("Starting XGBoost training")
+    t0 = time.time()
+
     # 0.  Load feature  matrix
-    featrue_matrix = load_data_csv(feat_file_name, cache_dir)
+    feature_matrix = load_data_csv(feat_file_name, cache_dir)
 
     # 1. Split Data
-    x, y = data_split(featrue_matrix, feat_list)
+    x, y = data_split(feature_matrix, feat_list)
 
     # 2. Split train/val/test
     x_train, x_val, x_test, y_train, y_val, y_test = temporal_split(
         x, y, val_start_date, test_start_date
     )
+
+    logger.info(f"Train split - from {x_train.index.min()} to {x_train.index.min()}")
+    logger.info(f"Val split - from {x_val.index.min()} to {x_val.index.min()}")
+    logger.info(f"Test split - from {x_test.index.min()} to {x_test.index.min()}")
 
     # 3. Train model
     # If params are not tuned  -> tune params -> train model
@@ -271,5 +350,12 @@ def run_model_building_pipeline(
         x_train, x_val, y_train, y_val, params, num_boost, early_stop
     )
 
-    # 4. Save model
+    # 4. Save model and evaluation results
     save_xgb_model(model, model_file_name, model_dir)
+    save_data_csv(eval_results, learning_curve_file_name, model_dir)
+
+    elapsed_t = time.time() - t0
+    msg = f"Model Trained (time elapsed: {elapsed_t:.2f})"
+    print(msg)
+
+    return x_test, y_test
