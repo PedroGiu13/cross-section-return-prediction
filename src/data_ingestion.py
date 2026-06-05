@@ -10,7 +10,7 @@ from config.data_config import (
     RAW_DATA_PATH,
     RAW_TICKER_PRICE,
 )
-from utils.data_handler import save_data
+from utils.data_handler import save_data_parquet
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +52,7 @@ def get_ticker_data(tickers: list[str], start_date: str, end_date: str) -> pd.Da
         return pd.DataFrame()
 
 
-def validate_data(
-    data: pd.DataFrame, max_nan_pct: float = 0.1, min_history: int = 251
-) -> bool:
+def validate_data(data: pd.DataFrame, max_nan_pct: float, min_history: int) -> bool:
     """Function that validates data integrity.
 
     Tests:
@@ -65,8 +63,8 @@ def validate_data(
 
     Args:
         data (pd.DataFrame): df with daily adjusted closing prices
-        max_nan_pct (float, optional): Maximum pct of null values accepted. Defaults to 0.1.
-        min_history (int, optional): Minimum number of trading days. Defaults to 252 (1 year).
+        max_nan_pct (float, optional): Maximum pct of null values accepted.
+        min_history (int, optional): Minimum number of trading days.
 
     Returns:
         bool:
@@ -113,7 +111,7 @@ def validate_data(
 
 
 def process_data(
-    data: pd.DataFrame, max_nan_pct: float = 0.1, min_history: int = 251
+    data: pd.DataFrame, max_nan_pct: float, min_history: int
 ) -> pd.DataFrame:
     """Function that process the data before computing the features.
 
@@ -144,12 +142,12 @@ def run_ingestion_pipeline(
     tickers: list[str],
     start_date: str,
     end_date: str,
+    max_nan_pct: float,
+    min_history: int,
     raw_data_path: str = RAW_DATA_PATH,
     raw_file_name: str = RAW_TICKER_PRICE,
     processed_data_path: str = PROCESSED_DATA_PATH,
     processed_file_name: str = PROCESSED_TICKER_PRICE,
-    max_nan_pct: float = 0.1,
-    min_history: int = 251,
 ) -> str:
     """Orchestrator function of the entire data ingestion process.
 
@@ -183,7 +181,7 @@ def run_ingestion_pipeline(
     df = get_ticker_data(tickers, start_date, end_date)
 
     # 2. Save raw data
-    save_data(df, raw_file_name, raw_data_path)
+    save_data_parquet(df, raw_file_name, raw_data_path)
 
     # 3. Validate and clean data
     if df.empty:
@@ -192,12 +190,12 @@ def run_ingestion_pipeline(
 
     if not validate_data(df, max_nan_pct, min_history):
         logger.warning("Data Validation failed - Processing Data")
-        df_clean = process_data(df)
+        df_clean = process_data(df, max_nan_pct, min_history)
 
     df_clean = process_data(df, max_nan_pct, min_history)
 
     # 4. Save Processed Data
-    save_data(df, processed_file_name, processed_data_path)
+    save_data_parquet(df, processed_file_name, processed_data_path)
 
     elapsed_t = time.time() - t0
     msg = f"Pipline completed (time elapsed: {elapsed_t:.2f}) - Saved df: Rows - {df_clean.shape[0]}; Columns - {df_clean.shape[1]}; Observations {df_clean.size}"

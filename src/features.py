@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 
 from config.data_config import PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
-from utils.data_handler import load_data, save_data
+from config.model_config import FEAT_MATRIX_FILE_NAME
+from utils.data_handler import load_data_parquet, save_data_csv
 
 logger = logging.getLogger(__name__)
 
@@ -123,17 +124,19 @@ def transform_feature_matrix(feature_matrix: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_feature_pipeline(
-    file_name: str = PROCESSED_TICKER_PRICE, cache_dir: str = PROCESSED_DATA_PATH
+    load_file_name: str = PROCESSED_TICKER_PRICE,
+    cache_dir: str = PROCESSED_DATA_PATH,
+    save_file_name=FEAT_MATRIX_FILE_NAME,
 ) -> str:
     logger.info("Computing features")
     t0 = time.time()
 
     # 0. Load Data
-    prices = load_data(file_name, cache_dir)
+    prices = load_data_parquet(load_file_name, cache_dir)
 
     if prices.empty:
-        logger.error("Unable to load data for {file_name}")
-        return f"Unable to load data for {file_name}"
+        logger.error(f"Unable to load data for {load_file_name}")
+        return f"Unable to load data for {load_file_name}"
 
     # 1. Compute Features:
     log_returns = compute_log_returns(prices)
@@ -149,7 +152,7 @@ def run_feature_pipeline(
         keys=[
             "mom_1",
             "mom_6",
-            "momm_12",
+            "mom_12",
             "maxret",
             "chmom",
             "retvol_20",
@@ -163,8 +166,7 @@ def run_feature_pipeline(
     feature_matrix = transform_feature_matrix(wide_feature_matrix)
 
     # 3. Save Feature Matrix
-    file_name = "feature_matrix"
-    save_data(feature_matrix, file_name, cache_dir)
+    save_data_csv(feature_matrix, save_file_name, cache_dir)
 
     elapsed_t = time.time() - t0
 
