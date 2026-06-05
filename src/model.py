@@ -215,6 +215,7 @@ def hyperparameter_tuning(
     best_params = {
         "objective": "reg:squarederror",
         "eval_metric": "rmse",
+        "seed": 40,
         **study.best_params,
     }
 
@@ -327,9 +328,9 @@ def run_model_building_pipeline(
         x, y, val_start_date, test_start_date
     )
 
-    logger.info(f"Train split - from {x_train.index.min()} to {x_train.index.min()}")
-    logger.info(f"Val split - from {x_val.index.min()} to {x_val.index.min()}")
-    logger.info(f"Test split - from {x_test.index.min()} to {x_test.index.min()}")
+    logger.info(f"Train split - from {x_train.index.min()} to {x_train.index.max()}")
+    logger.info(f"Val split - from {x_val.index.min()} to {x_val.index.max()}")
+    logger.info(f"Test split - from {x_test.index.min()} to {x_test.index.max()}")
 
     # 3. Train model
     # If params are not tuned  -> tune params -> train model
