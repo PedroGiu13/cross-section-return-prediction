@@ -15,8 +15,16 @@ Each stage of the pipeline corresponds to a GitHub issue:
 import logging
 
 from config.data_config import CONFIG, PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
+from config.model_config import (
+    EARLY_STOP,
+    N_TRIALS,
+    NUM_BOOST,
+    TEST_START_DATE,
+    VAL_START_DATE,
+)
 from src.data_ingestion import run_ingestion_pipeline
 from src.features import run_feature_pipeline
+from src.model import run_model_building_pipeline
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,3 +50,7 @@ if __name__ == "__main__":
     )
 
     print(feature_matrix_result)
+
+    model_results = run_model_building_pipeline(
+        VAL_START_DATE, TEST_START_DATE, NUM_BOOST, EARLY_STOP, N_TRIALS
+    )
