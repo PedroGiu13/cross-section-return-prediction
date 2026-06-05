@@ -1,5 +1,14 @@
+# Files and directories
 MODEL_DIR = "models/"
+FEAT_MATRIX_FILE_NAME = "feature_matrix"
+XGB_BEST_PARMS_FILE_NAME = "xgb_best_params"
+XGB_MODEL_FILE_NAME = "xgb_model"
 
+# Temporal split
+VAL_START_DATE = ""
+TEST_START_DATE = ""
+
+# Features
 FEATURE_LIST = [
     "ticker",
     "mom_1",
@@ -12,15 +21,8 @@ FEATURE_LIST = [
     "log_returns",
 ]
 
-XGBOOST_PARAMS = {
-    "objective": "reg:squarederror",
-    "eval_metric": "rmse",
-    "eta": 0.05,
-    "max_depth": 4,
-    "subsample": 0.8,
-    "colsample_bytree": 0.8,
-    "min_child_weight": 20,
-    "lambda": 1.0,
-    "alpha": 0.1,
-    "seed": 42,
-}
+
+# XGBoost Training params
+NUM_BOOST = 1000
+EARLY_STOP = 30
+N_TRIALS = 60
