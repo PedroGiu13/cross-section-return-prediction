@@ -74,9 +74,7 @@ def compute_maxret(prices: pd.DataFrame) -> pd.DataFrame:
 
     log_returns = ratio.apply(np.log)
 
-    rolling_max = log_returns.rolling(21).max()
-
-    maxret = rolling_max.shift(1)
+    maxret = log_returns.rolling(21).max().shift(1)
 
     return maxret
 
