@@ -27,15 +27,6 @@ ENV/
 build/
 dist/
 
-# ================================
-# Testing & coverage
-# ================================
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-.tox/
-.nox/
 
 # ================================
 # Type checking & linting
@@ -71,10 +62,10 @@ data/processed/*
 # ================================
 # Model artefacts
 # ================================
-# models/*
-# !models/.gitkeep
-# *.joblib
-# *.pickle
+models/*
+!models/.gitkeep
+*.joblib
+*.pickle
 
 # ================================
 # Results & outputs
@@ -109,7 +100,6 @@ desktop.ini
 # IDE
 # ================================
 .vscode/
-.idea/
 *.code-workspace
 
 # ================================

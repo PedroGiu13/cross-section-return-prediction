@@ -51,7 +51,7 @@ def save_data_csv(data: pd.DataFrame, file_name: str, cache_dir: str) -> None:
 
     else:
         try:
-            data.to_csv(file_path)
+            data.to_csv(file_path, index=True)
             logger.info(f"File succesfully saved - {file_path}")
 
         except Exception as e:
@@ -100,7 +100,7 @@ def load_data_csv(file_name: str, cache_dir: str) -> pd.DataFrame:
 
     if file_path.exists():
         try:
-            df = pd.read_csv(file_path)
+            df = pd.read_csv(file_path, index_col=0, parse_dates=True)
             logger.info(f"{file_name} succesfully loaded")
             return df
 
