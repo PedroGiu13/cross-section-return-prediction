@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
-    """Compute the forward shifted log returns for the target variable using a 21 day rolling window and leaving a 1 day buffer. Drop all nan of the resultinf function.
+    """Compute the forward shifted log returns for the target variable using a 21 day rolling window and leaving a 1 day buffer.
 
     Args:
         prices (pd.DataFrame): daily adj closing prices df
@@ -25,7 +25,7 @@ def compute_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
 
     log_returns = ratio.apply(np.log)
 
-    rolling_log_returns = log_returns.shift(-2).rolling(21).sum()
+    rolling_log_returns = log_returns.rolling(21).sum().shift(-22)
 
     return rolling_log_returns
 

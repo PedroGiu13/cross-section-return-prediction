@@ -5,8 +5,8 @@ XGB_BEST_PARMS_FILE_NAME = "xgb_best_params"
 XGB_MODEL_FILE_NAME = "xgb_model"
 XGB_LEARNING_CURVE_FILE_NAME = "xgb_learning_curve"
 # Temporal split
-VAL_START_DATE = "2020-01-01"
-TEST_START_DATE = "2022-01-01"
+VAL_START_DATE = "2019-01-01"
+TEST_START_DATE = "2021-01-01"
 
 # Features
 FEATURE_LIST = [

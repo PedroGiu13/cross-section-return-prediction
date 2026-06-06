@@ -171,7 +171,7 @@ def hyperparameter_objective(
         x_train, x_val, y_train, y_val, params, num_boost, early_stop
     )
 
-    best_val_rmse = min(eval_results["val"]["rmse"])
+    best_val_rmse = min(eval_results["val_rmse"])
     return best_val_rmse
 
 
