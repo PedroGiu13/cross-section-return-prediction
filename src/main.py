@@ -8,8 +8,8 @@ Each stage of the pipeline corresponds to a GitHub issue:
     Issue #1 - Data ingestion          (src/data_loader.py)
     Issue #2 - Feature engineering     (src/features.py)
     Issue #3 - Model training          (src/model.py)
-    Issue #4 - Backtesting             (src/backtest.py)
-    Issue #5 - Portfolio construction  (src/portfolio.py)
+    Issue #4 - Portfolio construction  (src/portfolio.py)
+    Issue #5 - Backtesting             (src/backtest.py)
 """
 
 import logging
@@ -26,6 +26,7 @@ from src.data_ingestion import run_ingestion_pipeline
 from src.features import run_feature_pipeline
 from src.model_eval import run_model_eval_pipeline
 from src.model_training import run_model_building_pipeline
+from src.portfolio import run_portfolio_pipeline
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,11 +61,8 @@ if __name__ == "__main__":
     )
 
     # 4. Model Evaluation
-    metrics = run_model_eval_pipeline(x_test, y_test)
-    logger.info("Model Building Pipeline and Evaluation")
-    logger.info(f"- OOS R²: {metrics['oos_r2'] * 100:.4f}%")
+    model_eval_results = run_model_eval_pipeline(x_test, y_test)
+    print(model_eval_results)
 
-    logger.info("Monthly IC:")
-    logger.info(f"- IC mean: {metrics['ic_mean']:.4f}")
-    logger.info(f"- IC Std: {metrics['ic_std']:.4f}")
-    logger.info(f"- ICIR: {metrics['icir']:.4f}")
+    # 5. Portfolio Construction
+    net_returns = run_portfolio_pipeline()
