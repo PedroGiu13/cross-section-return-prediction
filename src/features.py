@@ -128,7 +128,7 @@ def run_feature_pipeline(
     cache_dir: str = PROCESSED_DATA_PATH,
     save_file_name=FEAT_MATRIX_FILE_NAME,
 ) -> str:
-    logger.info("Computing features")
+    logger.info("Computing Feature Matrix")
     t0 = time.time()
 
     # 0. Load Data
@@ -170,7 +170,12 @@ def run_feature_pipeline(
 
     elapsed_t = time.time() - t0
 
-    msg = f"Feature matrix computed (time elapsed: {elapsed_t:.2f} - Saved Feature Matrix: Rows - {feature_matrix.shape[0]}; Columns - {feature_matrix.shape[1]}; Observations {feature_matrix.size}"
-
+    msg = f"Feature matrix computed (time elapsed: {elapsed_t:.2f})"
     logger.info(msg)
+    logger.info("Feature Matrix:")
+    logger.info(f"- Rows: {feature_matrix.shape[0]}")
+    logger.info(f"- Columns: {feature_matrix.shape[1]}")
+    logger.info(f"- Observations: {feature_matrix.size}")
+    logger.info(f"- NaN Count: {feature_matrix.isna().sum().sum()}")
+
     return msg

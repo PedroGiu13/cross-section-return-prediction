@@ -43,7 +43,8 @@ def data_split(
         if feat not in dataset.columns:
             logger.warning(f"Missing feature: {feat}")
 
-    x = dataset.drop(["ticker", "log_returns"], axis=1)
+    dataset = dataset.set_index("ticker", append=True)
+    x = dataset.drop(["log_returns"], axis=1)
     y = dataset["log_returns"]
 
     return x, y
@@ -65,14 +66,20 @@ def temporal_split(
     """
 
     # X split
-    x_train = x[x.index < val_start_date]
-    x_val = x[(x.index >= val_start_date) & (x.index < test_start_date)]
-    x_test = x[x.index >= test_start_date]
+    x_train = x[x.index.get_level_values("date") < val_start_date]
+    x_val = x[
+        (x.index.get_level_values("date") >= val_start_date)
+        & (x.index.get_level_values("date") < test_start_date)
+    ]
+    x_test = x[x.index.get_level_values("date") >= test_start_date]
 
     # y split
-    y_train = y[y.index < val_start_date]
-    y_val = y[(y.index >= val_start_date) & (y.index < test_start_date)]
-    y_test = y[y.index >= test_start_date]
+    y_train = y[y.index.get_level_values("date") < val_start_date]
+    y_val = y[
+        (y.index.get_level_values("date") >= val_start_date)
+        & (y.index.get_level_values("date") < test_start_date)
+    ]
+    y_test = y[y.index.get_level_values("date") >= test_start_date]
 
     return x_train, x_val, x_test, y_train, y_val, y_test
 

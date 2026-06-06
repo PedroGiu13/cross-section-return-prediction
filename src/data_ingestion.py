@@ -45,6 +45,13 @@ def get_ticker_data(tickers: list[str], start_date: str, end_date: str) -> pd.Da
         if isinstance(df, pd.Series):
             return df.to_frame(tickers[0])
 
+        all_nan_tickers = df.columns[df.isna().all()].tolist()
+        if all_nan_tickers:
+            logger.warning(
+                f"Dropping {len(all_nan_tickers)} tickers with no data: {all_nan_tickers}"
+            )
+            df = df.drop(columns=all_nan_tickers)
+
         return df
 
     except Exception as e:
@@ -76,7 +83,7 @@ def validate_data(data: pd.DataFrame, max_nan_pct: float, min_history: int) -> b
 
     if data.empty:
         logger.error("DataFrame is empty")
-        return True
+        return False
 
     # Null Values
     per_ticker_nan_count = data.isna().sum()
@@ -96,7 +103,7 @@ def validate_data(data: pd.DataFrame, max_nan_pct: float, min_history: int) -> b
     # Data index
     if data.index.duplicated().any():
         n = data.index.duplicated().sum()
-        logger.warning(f"{n} duplicate indexe where found")
+        logger.warning(f"{n} duplicate index where found")
         is_valid = False
 
     # Ticker history
@@ -105,7 +112,6 @@ def validate_data(data: pd.DataFrame, max_nan_pct: float, min_history: int) -> b
             logger.warning(
                 f"{ticker} does not achieve the minimum history of trading days: {days} < {min_history}"
             )
-            is_valid = False
 
     return is_valid
 
@@ -131,7 +137,7 @@ def process_data(
 
     clean_data = data.loc[:, mask]
 
-    dropped_data = len(data) < len(clean_data)
+    dropped_data = data.shape[1] - clean_data.shape[1]
     if dropped_data:
         logger.info(f"Dropped {dropped_data} tickers.")
 
@@ -173,31 +179,36 @@ def run_ingestion_pipeline(
     """
 
     logger.info(
-        f"Ingestion pipeline started: {len(tickers)} Tickers, {start_date} to {end_date}"
+        f"Ingestion pipeline started fetching {len(tickers)} Tickers from {start_date} to {end_date}"
     )
     t0 = time.time()
 
     # 1. Fetch data
     df = get_ticker_data(tickers, start_date, end_date)
 
-    # 2. Save raw data
-    save_data_parquet(df, raw_file_name, raw_data_path)
-
-    # 3. Validate and clean data
+    # 2. Validate and clean data
     if df.empty:
         logger.error("No data fetched - aborting pipeline")
         return "Pipeline failed: no data fetched"
 
+    # 3. Save raw data
+    save_data_parquet(df, raw_file_name, raw_data_path)
+
     if not validate_data(df, max_nan_pct, min_history):
         logger.warning("Data Validation failed - Processing Data")
-        df_clean = process_data(df, max_nan_pct, min_history)
 
     df_clean = process_data(df, max_nan_pct, min_history)
 
     # 4. Save Processed Data
-    save_data_parquet(df, processed_file_name, processed_data_path)
+    save_data_parquet(df_clean, processed_file_name, processed_data_path)
 
     elapsed_t = time.time() - t0
-    msg = f"Pipline completed (time elapsed: {elapsed_t:.2f}) - Saved df: Rows - {df_clean.shape[0]}; Columns - {df_clean.shape[1]}; Observations {df_clean.size}"
+    msg = f"Ingestion Pipline completed (time elapsed: {elapsed_t:.2f}"
     logger.info(msg)
+    logger.info("Processed Data:")
+    logger.info(f"- Rows: {df_clean.shape[0]}")
+    logger.info(f"- Columns: {df_clean.shape[1]}")
+    logger.info(f"- Observations: {df_clean.size}")
+    logger.info(f"- NaN Count: {df_clean.isna().sum().sum()}")
+
     return msg

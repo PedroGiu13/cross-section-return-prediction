@@ -1,16 +1,17 @@
 import logging
+import time
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from config.eval_config import (
+from config.model_config import MODEL_DIR, XGB_MODEL_FILE_NAME
+from config.output_config import (
     BACKTESTING_DATA,
     EVAL_METRICS_FILE_NAME,
     FEATURE_IMPORTANCE_FILE_NAME,
     OUTPUT_PATH,
 )
-from config.model_config import MODEL_DIR, XGB_MODEL_FILE_NAME
 from utils.data_handler import save_data_csv, save_data_parquet
 
 logger = logging.getLogger(__name__)
@@ -117,8 +118,9 @@ def run_model_eval_pipeline(
     eval_metrics_file_name: str = EVAL_METRICS_FILE_NAME,
     backtest_file_name: str = BACKTESTING_DATA,
     output_dir: str = OUTPUT_PATH,
-) -> dict:
+) -> str:
     logger.info("Starting Model Evaluation")
+    t0 = time.time()
 
     # 1. Import model
     model_path = f"{model_dir}{model_file_name}.json"
@@ -150,4 +152,14 @@ def run_model_eval_pipeline(
     save_data_csv(feature_importance_df, feat_imp_file_name, output_dir)
     # save_data_csv(metrics_df, eval_metrics_file_name, output_dir)
 
-    return metrics
+    elapsed_t = time.time() - t0
+
+    msg = f"Model Evaluation Complete - (time elapsed: {elapsed_t:.2f})"
+    logger.info(msg)
+    logger.info(f"- OOS R²: {metrics['oos_r2'] * 100:.4f}%")
+    logger.info("Monthly IC:")
+    logger.info(f"- IC mean: {metrics['ic_mean']:.4f}")
+    logger.info(f"- IC Std: {metrics['ic_std']:.4f}")
+    logger.info(f"- ICIR: {metrics['icir']:.4f}")
+
+    return msg
