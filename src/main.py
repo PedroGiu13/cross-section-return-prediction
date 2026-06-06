@@ -24,13 +24,16 @@ from config.model_config import (
 )
 from src.data_ingestion import run_ingestion_pipeline
 from src.features import run_feature_pipeline
-from src.model import run_model_building_pipeline
+from src.model_eval import run_model_eval_pipeline
+from src.model_training import run_model_building_pipeline
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     # 1. Fetch, Validate, and Process data
@@ -51,8 +54,14 @@ if __name__ == "__main__":
 
     print(feature_matrix_result)
 
+    # 3.  Compute the model
     x_test, y_test = run_model_building_pipeline(
         VAL_START_DATE, TEST_START_DATE, NUM_BOOST, EARLY_STOP, N_TRIALS
     )
-    print(x_test.head())
-    print(x_test.tail())
+
+    # 4. Model Evaluation
+    metrics = run_model_eval_pipeline(x_test, y_test)
+    logger.info("Model Building Pipeline and Evaluation")
+    logger.info(f"- OOS R²: {metrics['oos_r2'] * 100:.4f}%")
+    logger.info(f"- IC mean: {metrics['ic_mean']:.4f}")
+    logger.info(f"- IC Std: {metrics['ic_std']:.4f}")
