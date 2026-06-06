@@ -63,5 +63,8 @@ if __name__ == "__main__":
     metrics = run_model_eval_pipeline(x_test, y_test)
     logger.info("Model Building Pipeline and Evaluation")
     logger.info(f"- OOS R²: {metrics['oos_r2'] * 100:.4f}%")
+
+    logger.info("Monthly IC:")
     logger.info(f"- IC mean: {metrics['ic_mean']:.4f}")
     logger.info(f"- IC Std: {metrics['ic_std']:.4f}")
+    logger.info(f"- ICIR: {metrics['icir']:.4f}")

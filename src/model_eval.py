@@ -53,7 +53,7 @@ def compute_oos_r2(y_true: pd.Series, y_pred: pd.Series) -> float:
 
 
 def compute_ic(y_true: pd.Series, y_pred: pd.Series) -> dict:
-    """Computes  Spearman's Information Coefficient between predictions and actual returns
+    """Computes monthly Spearman's Information Coefficient between predictions and actual returns
 
     Args:
         y_true (pd.Series): true target values
@@ -64,9 +64,11 @@ def compute_ic(y_true: pd.Series, y_pred: pd.Series) -> dict:
     """
 
     target_df = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
+    target_df = target_df.reset_index()
+    target_df["month"] = pd.to_datetime(target_df["date"]).dt.to_period("M")
 
     ic_series = (
-        target_df.groupby("date").apply(
+        target_df.groupby("month").apply(
             lambda x: x["y_true"].corr(x["y_pred"], method="spearman")
         )
     ).dropna()
@@ -77,6 +79,7 @@ def compute_ic(y_true: pd.Series, y_pred: pd.Series) -> dict:
     return {
         "ic_mean": round(ic_mean, 6),
         "ic_std": round(ic_std, 6),
+        "icir": round(ic_mean / ic_std, 6),
         "ic_series": ic_series,
     }
 
@@ -136,6 +139,7 @@ def run_model_eval_pipeline(
         "oos_r2": oos_r2,
         "ic_mean": ic_results["ic_mean"],
         "ic_std": ic_results["ic_std"],
+        "icir": ic_results["icir"],
     }
 
     feature_importance_df = compute_feature_importance(model)
