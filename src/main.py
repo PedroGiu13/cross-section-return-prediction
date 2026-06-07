@@ -5,15 +5,16 @@ Usage:
     python main.py
 
 Each stage of the pipeline corresponds to a GitHub issue:
-    Issue #1 - Data ingestion          (src/data_loader.py)
-    Issue #2 - Feature engineering     (src/features.py)
-    Issue #3 - Model training          (src/model.py)
-    Issue #4 - Portfolio construction  (src/portfolio.py)
-    Issue #5 - Backtesting             (src/backtest.py)
+    Issue #1 - Data ingestion
+    Issue #2 - Feature engineering
+    Issue #3 - Model training
+    Issue #4 - Portfolio construction
+    Issue #5 - Backtesting
 """
 
 import logging
 
+from config.backtest_config import PERIODS_YEAR, RISK_FREE_RATE
 from config.data_config import CONFIG, PROCESSED_DATA_PATH, PROCESSED_TICKER_PRICE
 from config.model_config import (
     EARLY_STOP,
@@ -22,6 +23,8 @@ from config.model_config import (
     TEST_START_DATE,
     VAL_START_DATE,
 )
+from config.output_config import OUTPUT_PATH, PORTFOLIO_RETURNS
+from src.backtest import run_bactest_pipeline
 from src.data_ingestion import run_ingestion_pipeline
 from src.features import run_feature_pipeline
 from src.model_eval import run_model_eval_pipeline
@@ -66,3 +69,13 @@ if __name__ == "__main__":
 
     # 5. Portfolio Construction
     net_returns = run_portfolio_pipeline()
+    print(net_returns)
+
+    # 6. Backtest
+    backtest_result = run_bactest_pipeline(
+        PERIODS_YEAR,
+        RISK_FREE_RATE,
+        N_TRIALS,
+        PORTFOLIO_RETURNS,
+        OUTPUT_PATH,
+    )
