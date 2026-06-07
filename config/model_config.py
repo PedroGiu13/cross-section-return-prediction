@@ -26,4 +26,4 @@ FEATURE_LIST = [
 FINE_TUNE = False  # Change to True for fine tunning
 NUM_BOOST = 1000
 EARLY_STOP = 30
-N_TRIALS = 60
+N_TRIALS = 30

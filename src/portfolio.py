@@ -44,10 +44,18 @@ def assign_quantiles(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: monthly retruns with quantiles
     """
 
-    df["quantile"] = df.groupby("month")["y_pred"].transform(
-        lambda x: pd.qcut(x, q=5, labels=[1, 2, 3, 4, 5])
-    )
+    def rank_to_quintile(x: pd.Series) -> pd.Series:
+        # Rank with average method to handle ties gracefully
+        ranks = x.rank(method="average", ascending=True)
+        # Map rank to quintile 1-5
+        return pd.cut(
+            ranks,
+            bins=5,
+            labels=[1, 2, 3, 4, 5],
+            include_lowest=True,
+        )
 
+    df["quantile"] = df.groupby("month")["y_pred"].transform(rank_to_quintile)
     return df
 
 

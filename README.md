@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project implements an end-to-en quantitative machine learning pipeline for cross-sectional equity return prediction. The pipeline spans data ingestion through portfolio backtesting. The goal is to determine whether a small set of price-based factors, constructed with strict no-leakage temporal discipline, can generate statistically meaningful cross-sectional signals on a freely available equity dataset.
+This project implements an end-to-end, modular machine learning pipeline for cross-sectiopn equity return prediction. The entire framework tries to emulate the entire workflow of an industry environment with the limitations of working with free, open-source resources. The goal is to determine whether a small set of price-based factors (momentum, change in momentum, max single day returns, and realised volatility), constructed with strict no-leakage temporal discipline, can generate statistically meaningful cross-sectional signals on a freely available equity dataset.
 
 ---
 
@@ -10,14 +10,18 @@ This project implements an end-to-en quantitative machine learning pipeline for 
 
 | Metric | XGBoost |
 |---|---|
-| OOS R² | **0.7621%**
-| Monthly IC mean | **0.0556**
-| ICIR | **0.3703**
-| Net Sharpe ratio | 0.363
-| Max drawdown | -25.57%
-| Calmar ratio | 0.231
-| DSR (N=60, T=59) | 0.059
-| Positive months | 52.5%
+| OOS R² | **0.9136%**
+| Monthly IC mean | **0.0574**
+| Monthly IC std | **0.1350**
+| ICIR | **0.4249**
+| Net Sharpe ratio | 0.301
+| Annualised Volatility | 26.02%
+| Max drawdown | -30.39%
+| Calmar ratio | 0.259
+| DSR (N=60, T=59) | 0.076
+| Positive months | 59.3%
+
+
 
 The model demonstrates genuine predictive content with good OOS R² and IC metrics for the XGBoost model, while portfolio Sharpe reflects the additional difficulty of a longer 59-month test window spanning multiple distinct market regimes (2021 bull, 2022 bear, 2023–2025 recovery).
 
