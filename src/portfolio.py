@@ -69,13 +69,13 @@ def compute_portfolio_returns(df: pd.DataFrame, transaction_cost: float) -> pd.S
     net_returns = gross_returns - (2 * transaction_cost)
 
     logger.info(
-        f"Long leg  — mean: {long_returns.mean():.4f} | std: {long_returns.std():.4f}"
+        f"- Long leg => mean: {long_returns.mean():.4f} | std: {long_returns.std():.4f}"
     )
     logger.info(
-        f"Short leg — mean: {short_returns.mean():.4f} | std: {short_returns.std():.4f}"
+        f"- Short leg => mean: {short_returns.mean():.4f} | std: {short_returns.std():.4f}"
     )
     logger.info(
-        f"Gross L/S — mean: {gross_returns.mean():.4f} | std: {gross_returns.std():.4f}"
+        f"- Gross L/S => mean: {gross_returns.mean():.4f} | std: {gross_returns.std():.4f}"
     )
 
     return net_returns
@@ -101,40 +101,43 @@ def run_portfolio_pipeline(
     logger.info(f"- Unique months:{monthly_returns['month'].nunique()}")
     logger.info(f"- Unique tickers:{monthly_returns['ticker'].nunique()}")
     logger.info(
-        f"- Date range:{monthly_returns['month'].min()} → {monthly_returns['month'].max()}"
+        f"- Date range:{monthly_returns['month'].min()} -> {monthly_returns['month'].max()}"
     )
 
     tickers_per_month = monthly_returns.groupby("month")["ticker"].count()
-    logger.info(
-        f"Tickers per month — mean: {tickers_per_month.mean():.0f} | "
-        f"min: {tickers_per_month.min()} | "
-        f"max: {tickers_per_month.max()}"
-    )
+    logger.info("Tickers per month:")
+    logger.info(f"- mean: {tickers_per_month.mean():.0f}")
+    logger.info(f"- min: {tickers_per_month.min()}")
+    logger.info(f"- max: {tickers_per_month.max()}")
 
     # 2. Rank predicted returns
     monthly_returns = assign_quantiles(monthly_returns)
 
     quantile_pred = monthly_returns.groupby("quantile")["y_pred"].mean()
-    quantile_true = monthly_returns.groupby("quantile")["y_test"].mean()
+    quantile_test = monthly_returns.groupby("quantile")["y_test"].mean()
 
     logger.info("Returns Ranking: ")
-    logger.info("Quantile mean y_test (should increase Q1 -> Q5):")
+    logger.info("=> Quantile mean y_pred (should increase Q1 -> Q5):")
     for q, v in quantile_pred.items():
-        logger.info(f"- Q{q}: {v:.6f}")
-    logger.info("Quantile mean y_pred (realised returns by quantile):")
-    for q, v in quantile_true.items():
-        logger.info(f"- Q{q}: {v:.6f}")
+        logger.info(f"  - Q{q}: {v:.6f}")
+
+    logger.info("=> Quantile mean y_test (realised returns by quantile):")
+    for q, v in quantile_test.items():
+        logger.info(f"  - Q{q}: {v:.6f}")
 
     # 3. Build Porfolio
+    logger.info("Portfolio Metrics: ")
+
     net_returns = compute_portfolio_returns(monthly_returns, transaction_cost)
 
-    logger.info("Portfolio Metrics: ")
-    logger.info(f"- Best month:  {net_returns.idxmax()} → {net_returns.max():.4f}")
-    logger.info(f"- Worst month: {net_returns.idxmin()} → {net_returns.min():.4f}")
-    logger.info("- Top 5 months:")
+    logger.info(f"- Best month: {net_returns.max():.4f} ({net_returns.idxmax()})")
+    logger.info(f"- Worst month:  {net_returns.min():.4f} ({net_returns.idxmin()})")
+
+    logger.info("=> Top 5 months:")
     for month, val in net_returns.nlargest(5).items():
         logger.info(f"  - {month}: {val:.4f}")
-    logger.info("- Bottom 5 months:")
+
+    logger.info("=> Bottom 5 months:")
     for month, val in net_returns.nsmallest(5).items():
         logger.info(f"  - {month}: {val:.4f}")
 
@@ -150,33 +153,22 @@ def run_portfolio_pipeline(
     )
 
     logger.info(
-        f"Long leg return:      "
-        f"- {best_month_df[best_month_df['quantile'] == 5]['y_test'].mean():.4f}"
+        f"- Long leg return: {best_month_df[best_month_df['quantile'] == 5]['y_test'].mean():.4f}"
     )
     logger.info(
-        f"Short leg return:     "
-        f"- {best_month_df[best_month_df['quantile'] == 1]['y_test'].mean():.4f}"
+        f"- Short leg return: {best_month_df[best_month_df['quantile'] == 1]['y_test'].mean():.4f}"
     )
     logger.info(
-        f"Max single y_test in long:  "
-        f"- {best_month_df[best_month_df['quantile'] == 5]['y_test'].max():.4f}"
+        f"- Max single y_test in long: {best_month_df[best_month_df['quantile'] == 5]['y_test'].max():.4f}"
     )
     logger.info(
-        f"Min single y_test in short: "
-        f"- {best_month_df[best_month_df['quantile'] == 1]['y_test'].min():.4f}"
+        f"- Min single y_test in short: {best_month_df[best_month_df['quantile'] == 1]['y_test'].min():.4f}"
     )
 
     logger.info("Additional Info:")
     logger.info(f"- NaNs in y_pred: {monthly_returns['y_pred'].isna().sum()}")
     logger.info(f"- NaNs in y_test: {monthly_returns['y_test'].isna().sum()}")
     logger.info(f"- NaNs in quantile: {monthly_returns['quantile'].isna().sum()}")
-
-    logger.info(
-        f"y_test — mean: {monthly_returns['y_test'].mean():.4f} | "
-        f"std: {monthly_returns['y_test'].std():.4f} | "
-        f"min: {monthly_returns['y_test'].min():.4f} | "
-        f"max: {monthly_returns['y_test'].max():.4f}"
-    )
 
     # 4. Save data
     net_returns_df = net_returns.to_frame("net_portfolio_returns")
